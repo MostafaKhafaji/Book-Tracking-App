@@ -15,7 +15,10 @@ export default function Book(props) {
           }}
         ></div>
         <div className="book-shelf-changer">
-          <select defaultValue={props.book.shelf} onChange={handleBookShelf}>
+          <select
+            defaultValue={props.book.shelf ? props.book.shelf : "none"}
+            onChange={handleBookShelf}
+          >
             <option value="none" disabled>
               Move to...
             </option>

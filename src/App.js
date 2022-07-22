@@ -1,16 +1,40 @@
 import "./App.css";
+import React from "react";
 import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Header from "./components/Header";
 import Shelfs from "./components/Shelfs";
 import * as API from "./BooksAPI";
+import Book from "./components/Book";
+
 function App() {
+  const [books, setBooks] = useState([]);
+  const [searchBooks, setSearchBooks] = useState([]);
+  const [search, setSearch] = useState("");
   useEffect(() => {
     API.getAll().then((data) => {
       setBooks(data);
     });
-  });
-  const [showSearchPage, setShowSearchpage] = useState(false);
-  const [books, setBooks] = useState([]);
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    if (search) {
+      API.search(search).then((data) => {
+        if (data.error) {
+          console.log(data);
+        } else {
+          if (isActive) {
+            setSearchBooks(data);
+          }
+        }
+      });
+      return () => {
+        isActive = false;
+        setSearchBooks([]);
+      };
+    }
+  }, [search]);
   const update = (book, targetShelf) => {
     const newBooks = books.map((currentBook) => {
       if (currentBook.id === book.id) {
@@ -22,39 +46,62 @@ function App() {
     setBooks(newBooks);
     API.update(book, targetShelf);
   };
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+  };
   return (
     <div className="app">
-      {showSearchPage ? (
-        <div className="search-books">
-          <div className="search-books-bar">
-            <a
-              className="close-search"
-              onClick={() => setShowSearchpage(!showSearchPage)}
-            >
-              Close
-            </a>
-            <div className="search-books-input-wrapper">
-              <input
-                type="text"
-                placeholder="Search by title, author, or ISBN"
-              />
-            </div>
-          </div>
-          <div className="search-books-results">
-            <ol className="books-grid"></ol>
-          </div>
-        </div>
-      ) : (
-        <div className="list-books">
-          <Header />
-          <div className="list-books-content">
-            <Shelfs books={books} update={update} />
-          </div>
-          <div className="open-search">
-            <a onClick={() => setShowSearchpage(!showSearchPage)}>Add a book</a>
-          </div>
-        </div>
-      )}
+      <Router>
+        <Routes>
+          <Route
+            exact
+            path="/search"
+            element={
+              <div className="search-books">
+                <div className="search-books-bar">
+                  <Link to={"/"}>
+                    <a className="close-search">Close</a>
+                  </Link>
+                  <div className="search-books-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder="Search by title, author, or ISBN"
+                      value={search}
+                      onChange={handleSearch}
+                    />
+                  </div>
+                </div>
+                <div className="search-books-results">
+                  <ol className="books-grid">
+                    {searchBooks.map((book) => (
+                      <li key={book.id}>
+                        <Book book={book} update={update} />
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            }
+          ></Route>
+
+          <Route
+            path="/"
+            element={
+              <div className="list-books">
+                <Header />
+                <div className="list-books-content">
+                  <Shelfs books={books} update={update} />
+                </div>
+                <div className="open-search">
+                  <Link to={"/search"}>
+                    <a>Add a book</a>
+                  </Link>
+                </div>
+              </div>
+            }
+          ></Route>
+        </Routes>
+      </Router>
     </div>
   );
 }
