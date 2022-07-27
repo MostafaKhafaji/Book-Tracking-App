@@ -10,10 +10,13 @@ import Book from "./components/Book";
 function App() {
   const [books, setBooks] = useState([]);
   const [searchBooks, setSearchBooks] = useState([]);
+  const [idOfBook, setIdOfBook] = useState(new Map());
+  const [allBooks, setAllBooks] = useState([]);
   const [search, setSearch] = useState("");
   useEffect(() => {
     API.getAll().then((data) => {
       setBooks(data);
+      setIdOfBook(createIdOfBooks(data));
     });
   }, []);
 
@@ -35,6 +38,21 @@ function App() {
       };
     }
   }, [search]);
+  const createIdOfBooks = (books) => {
+    const map = new Map();
+    books.map((book) => map.set(book.id, book));
+    return map;
+  };
+  useEffect(() => {
+    const all = searchBooks.map((book) => {
+      if (idOfBook.has(book.id)) {
+        return idOfBook.get(book.id);
+      } else {
+        return book;
+      }
+    });
+    setAllBooks(all);
+  }, [searchBooks]);
   const update = (book, targetShelf) => {
     const newBooks = books.map((currentBook) => {
       if (currentBook.id === book.id) {
@@ -73,7 +91,7 @@ function App() {
                 </div>
                 <div className="search-books-results">
                   <ol className="books-grid">
-                    {searchBooks.map((book) => (
+                    {allBooks.map((book) => (
                       <li key={book.id}>
                         <Book book={book} update={update} />
                       </li>
